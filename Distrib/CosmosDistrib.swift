@@ -92,7 +92,7 @@ struct StarLayer {
 
     containerLayer.addSublayer(imageLayer)
     imageLayer.contents = image.cgImage
-    imageLayer.contentsGravity = kCAGravityResizeAspect
+    imageLayer.contentsGravity = CALayerContentsGravity.resizeAspect
     
     return containerLayer
   }
@@ -223,7 +223,7 @@ struct CosmosAccessibility {
     view.isAccessibilityElement = true
     
     view.accessibilityTraits = settings.updateOnTouch ?
-      UIAccessibilityTraitAdjustable :UIAccessibilityTraitNone
+      UIAccessibilityTraits.adjustable :UIAccessibilityTraits.none
     
     var accessibilityLabel = CosmosLocalizedRating.ratingTranslation
     
@@ -281,8 +281,9 @@ struct CosmosAccessibility {
     }
     
     if rating >= Double(settings.totalStars) { increment = 0 }
-            
-    return increment
+
+    let roundedToFirstDecimalPlace = Double( round(10 * increment) / 10 )
+    return roundedToFirstDecimalPlace
   }
   
   static func accessibilityDecrement(_ rating: Double, settings: CosmosSettings) -> Double {
@@ -299,8 +300,9 @@ struct CosmosAccessibility {
     }
     
     if rating <= settings.minTouchRating { increment = 0 }
-    
-    return increment
+
+    let roundedToFirstDecimalPlace = Double( round(10 * increment) / 10 )
+    return roundedToFirstDecimalPlace
   }
 }
 
@@ -424,7 +426,7 @@ struct CosmosDefaultSettings {
   static let textColor = UIColor(red: 127/255, green: 127/255, blue: 127/255, alpha: 1)
   
   /// Font for the text.
-  static let textFont = UIFont.preferredFont(forTextStyle: UIFontTextStyle.footnote)
+  static let textFont = UIFont.preferredFont(forTextStyle: UIFont.TextStyle.footnote)
   
   /// Distance between the text and the stars.
   static let textMargin: Double = 5
@@ -443,8 +445,14 @@ struct CosmosDefaultSettings {
   /// The lowest rating that user can set by touching the stars.
   static let minTouchRating: Double = 1
   
+  /// Set to `false` if you don't want to pass touches to superview (can be useful in a table view).
+  static let passTouchesToSuperview = true
+  
   /// When `true` the star fill level is updated when user touches the cosmos view. When `false` the Cosmos view only shows the rating and does not act as the input control.
   static let updateOnTouch = true
+
+  /// Set to `true` if you want to ignore pan gestures (can be useful when presented modally with a `presentationStyle` of `pageSheet` to avoid competing with the dismiss gesture)
+  static let disablePanGestures = false
 }
 
 
@@ -770,7 +778,7 @@ class CosmosLayerHelper {
   
   */
   class func createTextLayer(_ text: String, font: UIFont, color: UIColor) -> CATextLayer {
-    let size = NSString(string: text).size(withAttributes: [NSAttributedStringKey.font: font])
+    let size = NSString(string: text).size(withAttributes: [NSAttributedString.Key.font: font])
     
     let layer = CATextLayer()
     layer.bounds = CGRect(origin: CGPoint(), size: size)
@@ -995,7 +1003,13 @@ Settings that define the appearance of the star rating views.
 
 */
 public struct CosmosSettings {
-  init() {}
+
+  /// Returns default set of settings for CosmosView
+  public static var `default`: CosmosSettings {
+    return CosmosSettings()
+  }
+
+  public init() {}
   
   // MARK: - Star settings
   // -----------------------------
@@ -1077,8 +1091,14 @@ public struct CosmosSettings {
   /// The lowest rating that user can set by touching the stars.
   public var minTouchRating: Double = CosmosDefaultSettings.minTouchRating
   
+  /// Set to `false` if you don't want to pass touches to superview (can be useful in a table view).
+  public var passTouchesToSuperview = CosmosDefaultSettings.passTouchesToSuperview
+  
   /// When `true` the star fill level is updated when user touches the cosmos view. When `false` the Cosmos view only shows the rating and does not act as the input control.
   public var updateOnTouch = CosmosDefaultSettings.updateOnTouch
+
+  /// Set to `true` if you want to ignore pan gestures (can be useful when presented modally with a `presentationStyle` of `pageSheet` to avoid competing with the dismiss gesture)
+  public var disablePanGestures = CosmosDefaultSettings.disablePanGestures
 }
 
 
@@ -1184,7 +1204,7 @@ Shows: ★★★★☆ (123)
   }
   
   /// Star rating settings.
-  open var settings = CosmosSettings() {
+  open var settings: CosmosSettings = .default {
     didSet {
       update()
     }
@@ -1199,17 +1219,16 @@ Shows: ★★★★☆ (123)
     
     update()
   }
-  
-  
+
   /**
 
   Initializes and returns a newly allocated cosmos view object.
   
   */
-  convenience public init() {
-    self.init(frame: CGRect())
+  public convenience init(settings: CosmosSettings = .default) {
+    self.init(frame: .zero, settings: settings)
   }
-  
+
   /**
 
   Initializes and returns a newly allocated cosmos view object with the specified frame rectangle.
@@ -1217,8 +1236,13 @@ Shows: ★★★★☆ (123)
   - parameter frame: The frame rectangle for the view.
   
   */
-  override public init(frame: CGRect) {
+  override public convenience init(frame: CGRect) {
+    self.init(frame: frame, settings: .default)
+  }
+
+  public init(frame: CGRect, settings: CosmosSettings) {
     super.init(frame: frame)
+    self.settings = settings
     update()
     improvePerformance()
   }
@@ -1350,6 +1374,34 @@ Shows: ★★★★☆ (123)
     return viewSize
   }
   
+  /**
+   
+  Prepares the Cosmos view for reuse in a table view cell.
+  If the cosmos view is used in a table view cell, call this method after the
+  cell is dequeued. Alternatively, override UITableViewCell's prepareForReuse method and call
+  this method from there.
+   
+  */
+  open func prepareForReuse() {
+    previousRatingForDidTouchCallback = -123.192
+  }
+  
+  /**
+  
+  Makes sure that the right colors are used when the user switches between Light and Dark mode
+  while the app is running
+     
+  */
+  open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+    super.traitCollectionDidChange(previousTraitCollection)
+        
+    if #available(iOS 13.0, tvOS 10.0, *) {
+      if self.traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
+        update()
+      }
+    }
+  }
+  
   // MARK: - Accessibility
   
   private func updateAccessibility() {
@@ -1384,14 +1436,14 @@ Shows: ★★★★☆ (123)
   
   /// Overriding the function to detect the first touch gesture.
   open override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesBegan(touches, with: event)
+    if settings.passTouchesToSuperview { super.touchesBegan(touches, with: event) }
     guard let location = touchLocationFromBeginningOfRating(touches) else { return }
     onDidTouch(location)
   }
   
   /// Overriding the function to detect touch move.
   open override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesMoved(touches, with: event)
+    if settings.passTouchesToSuperview { super.touchesMoved(touches, with: event) }
     guard let location = touchLocationFromBeginningOfRating(touches) else { return }
     onDidTouch(location)
   }
@@ -1409,9 +1461,16 @@ Shows: ★★★★☆ (123)
   
   /// Detecting event when the user lifts their finger.
   open override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesEnded(touches, with: event)
-    
+    if settings.passTouchesToSuperview { super.touchesEnded(touches, with: event) }
     didFinishTouchingCosmos?(rating)
+  }
+
+  /// Deciding whether to recognize a gesture.
+  open override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    if settings.disablePanGestures {
+      return !(gestureRecognizer is UIPanGestureRecognizer)
+    }
+      return true
   }
 
   /**
@@ -1421,8 +1480,7 @@ Shows: ★★★★☆ (123)
    
    */
   open override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesCancelled(touches, with: event)
-    
+    if settings.passTouchesToSuperview { super.touchesCancelled(touches, with: event) }
     didFinishTouchingCosmos?(rating)
   }
 

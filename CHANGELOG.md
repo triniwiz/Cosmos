@@ -1,6 +1,60 @@
 # Cosmos version history
 
 
+## 23.0.0 (2020-09-19)
+
+* Fixed iOS version warning in Xcode 12 (https://github.com/evgenyneu/Cosmos/issues/171).
+
+
+## 22.0.0 (2020-05-23)
+
+* Allow switching between light/dark modes without restarting (https://github.com/evgenyneu/Cosmos/issues/162).
+
+
+## 21.0.0 (2020-01-20)
+
+* Set `APPLICATION_EXTENSION_API_ONLY` to `Yes` (https://github.com/evgenyneu/Cosmos/pull/155).
+
+
+## 20.0.1 (2019-10-01)
+
+* Fixed Cosmos view when used in a modal screen on iOS 13 (https://github.com/evgenyneu/Cosmos/issues/148).
+
+
+## 20.0.0 (2019-10-01)
+
+* Added Swift Package Manager support ([gcharita](https://github.com/gcharita)).
+
+
+## 19.0.0 (2019-04-20)
+
+* Update to Swift 5.0.
+
+
+## 18.0.0 (2018-12-24)
+
+* Added `passTouchesToSuperview` setting to prevent passing touches to superview ([yuravake](https://github.com/yuravake)).
+
+
+## 17.0.0 (2018-09-19)
+
+* Updated for Swift 4.2 and Xcode 10.0 ([chlumik](https://github.com/chlumik)).
+
+
+## 16.0.0 (2018-05-12)
+
+* Added ability to customize the Cosmos view from the interface builder with Carthage setup method ([jsahoo](https://github.com/jsahoo)).
+
+
+## 15.0.0 (2018-02-16)
+
+* Added `prepareForReuse` function to help recycle Cosmos views in table cells.
+
+
+## 14.0.0 (2018-01-31)
+
+* Added ability to reuse settings in multiple cosmos views.
+
 
 ## 13.0.0 (2017-12-18)
 

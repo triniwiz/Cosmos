@@ -20,15 +20,37 @@ import Foundation
 Defines how the star is filled when the rating is not an integer number. For example, if rating is 4.6 and the fill more is Half, the star will appear to be half filled.
 
 */
-public enum StarFillMode: Int {
+@objc public enum StarFillMode: Int, RawRepresentable {
   /// Show only fully filled stars. For example, fourth star will be empty for 3.2.
-  case full = 0
-  
+  case full
+
   /// Show fully filled and half-filled stars. For example, fourth star will be half filled for 3.6.
-  case half = 1
-  
+  case half
+
   /// Fill star according to decimal rating. For example, fourth star will be 20% filled for 3.2.
-  case precise = 2
+  case precise
+
+  public typealias RawValue = Int
+  public var rawValue: RawValue{
+        switch self {
+        case .half:
+            return 1;
+        case .precise:
+            return 2;
+        default:
+            return 0;
+        }
+  }
+  public init?(rawValue: RawValue){
+        switch rawValue {
+        case 1:
+            self = .half;
+        case 2:
+            self = .precise;
+        default:
+            self = .full;
+        }
+  }
 }
 
 
@@ -1002,14 +1024,15 @@ import UIKit
 Settings that define the appearance of the star rating views.
 
 */
-public struct CosmosSettings {
+@objcMembers
+public class CosmosSettings: NSObject {
 
   /// Returns default set of settings for CosmosView
   public static var `default`: CosmosSettings {
     return CosmosSettings()
   }
 
-  public init() {}
+    public override init() {}
   
   // MARK: - Star settings
   // -----------------------------
@@ -1168,23 +1191,18 @@ struct RightToLeft {
 import UIKit
 
 /**
-
 A star rating view that can be used to show customer rating for the products. On can select stars by tapping on them when updateOnTouch settings is true. An optional text can be supplied that is shown on the right side.
-
 Example:
-
     cosmosView.rating = 4
     cosmosView.text = "(123)"
-
 Shows: ★★★★☆ (123)
-
 */
+@objcMembers
 @IBDesignable open class CosmosView: UIView {
     
   /**
   
   The currently shown number of stars, usually between 1 and 5. If the value is decimal the stars will be shown according to the Fill Mode setting.
-
   */
   @IBInspectable open var rating: Double = CosmosDefaultSettings.rating {
     didSet {
@@ -1221,7 +1239,6 @@ Shows: ★★★★☆ (123)
   }
 
   /**
-
   Initializes and returns a newly allocated cosmos view object.
   
   */
@@ -1230,9 +1247,7 @@ Shows: ★★★★☆ (123)
   }
 
   /**
-
   Initializes and returns a newly allocated cosmos view object with the specified frame rectangle.
-
   - parameter frame: The frame rectangle for the view.
   
   */
@@ -1281,7 +1296,6 @@ Shows: ★★★★☆ (123)
     
     // Create text layer
     // ------------
-
     if let text = text {
       let textLayer = createTextLayer(text, layers: layers)
       layers = addTextLayer(textLayer: textLayer, layers: layers)
@@ -1292,12 +1306,10 @@ Shows: ★★★★☆ (123)
     
     // Update size
     // ------------
-
     updateSize(layers)
     
     // Update accesibility
     // ------------
-
     updateAccessibility()
   }
   
@@ -1354,11 +1366,9 @@ Shows: ★★★★☆ (123)
   }
   
   /**
-
   Updates the size to fit all the layers containing stars and text.
   
   - parameter layers: Array of layers containing stars and the text.
-
   */
   private func updateSize(_ layers: [CALayer]) {
     viewSize = CosmosSize.calculateSizeToFitLayers(layers)
@@ -1485,9 +1495,7 @@ Shows: ★★★★☆ (123)
   }
 
   /**
-
   Called when the view is touched.
-
   - parameter locationX: The horizontal location of the touch relative to the width of the stars.
   
   - parameter starsWidth: The width of the stars excluding the text.

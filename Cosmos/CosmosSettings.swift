@@ -13,7 +13,7 @@ public class CosmosSettings: NSObject {
     return CosmosSettings()
   }
 
-  public init() {}
+    public override init() {}
   
   // MARK: - Star settings
   // -----------------------------
